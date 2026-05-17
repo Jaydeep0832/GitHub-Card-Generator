@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Dev Card Generator</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #161b22 25%, #21262d 50%, #161b22 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(35, 134, 54, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-glow:active {
+            transform: translateY(0);
+        }
+        iframe {
+            background: transparent;
+            border: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div id="root" class="w-full max-w-[600px]"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [username, setUsername] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [cardUrl, setCardUrl] = useState(null);
+            const [error, setError] = useState(null);
+            const [copied, setCopied] = useState(false);
+
+            const handleGenerate = async (e) => {
+                e.preventDefault();
+                if (!username.trim()) return;
+
+                setLoading(true);
+                setError(null);
+                setCardUrl(null);
+                setCopied(false);
+
+                try {
+                    const response = await fetch('http://localhost:8080/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: username.trim() })
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.detail || 'Failed to generate card');
+                    }
+
+                    const data = await response.json();
+                    // Ensure URL is absolute for the iframe
+                    setCardUrl(`http://localhost:8080${data.card_url}`);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText(cardUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            return (
+                <div class="text-center">
+                    <header class="mb-8">
+                        <h1 class="text-4xl font-bold text-white mb-2">GitHub Dev Card Generator</h1>
+                        <p class="text-gray-400">Enter any public GitHub username to generate a unique developer card.</p>
+                    </header>
+
+                    <form onSubmit={handleGenerate} class="flex flex-col sm:flex-row gap-3 mb-10">
+                        <input 
+                            type="text" 
+                            value={username} 
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="e.g. torvalds"
+                            class="flex-1 bg-[#0d1117] border border-[#30363d] rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff] transition-all"
+                            required
+                        />
+                        <button 
+                            type="submit"
+                            disabled={loading}
+                            class="bg-[#238636] hover:bg-[#2ea043] text-white font-semibold px-6 py-2 rounded-md transition-all btn-glow disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'Generating...' : 'Generate Card'}
+                        </button>
+                    </form>
+
+                    {loading && (
+                        <div class="fade-in space-y-4">
+                            <div class="skeleton h-64 w-full rounded-xl"></div>
+                            <div class="flex justify-center gap-4">
+                                <div class="skeleton h-10 w-32 rounded-md"></div>
+                            </div>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div class="fade-in bg-red-900/20 border border-red-500/50 p-4 rounded-md text-red-400 mb-6">
+                            <p>Oops! {error}. Check the username and try again.</p>
+                        </div>
+                    )}
+
+                    {cardUrl && !loading && (
+                        <div class="fade-in">
+                            <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden shadow-2xl mb-6">
+                                <iframe 
+                                    src={cardUrl} 
+                                    class="w-full min-h-[400px]" 
+                                    title="Developer Card"
+                                ></iframe>
+                            </div>
+                            
+                            <button 
+                                onClick={copyToClipboard}
+                                class="inline-flex items-center gap-2 bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] border border-[#30363d] px-4 py-2 rounded-md transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                                {copied ? 'URL Copied!' : 'Copy Share URL'}
+                            </button>
+                        </div>
+                    )}
+
+                    <footer class="mt-20 text-xs text-gray-500">
+                        Powered by Gemini 2.5 Flash & ADK
+                    </footer>
+                </div>
+            );
+        }
+
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<App />);
+    </script>
+</body>
+</html>

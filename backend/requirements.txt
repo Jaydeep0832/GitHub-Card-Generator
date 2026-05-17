@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+mcp
+google-generativeai
+google-cloud-aiplatform
+python-dotenv
+httpx
+pydantic
+# adk (Assuming google-adk is the package name or similar, using placeholders if exact name varies)
+google-adk
