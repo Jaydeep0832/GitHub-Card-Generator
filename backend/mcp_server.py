@@ -73,7 +73,14 @@ async def analyze_profile(github_data: dict) -> dict:
     """
     
     response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
-    return json.loads(response.text)
+    text = response.text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    if text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return json.loads(text.strip())
 
 @mcp.tool()
 async def generate_card_html(username: str, github_data: dict, analysis: dict) -> str:
