@@ -10,7 +10,7 @@ load_dotenv()
 
 # Configure Gemini
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-flash-lite-latest")
 
 mcp = FastMCP("GithubCardGenerator")
 
