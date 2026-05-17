@@ -210,7 +210,6 @@ async def generate_card_html(username: str, github_data: dict, analysis: dict) -
 </html>"""
     return html
 
-@mcp.tool()
 async def save_card(username: str, html: str) -> str:
     """Save the card HTML and return the file path."""
     abs_path = os.path.join(os.path.dirname(__file__), "static", "cards", f"{username}.html")
