@@ -31,7 +31,7 @@ github_card_agent = Agent(
         "you MUST call the create_github_card tool with that username. "
         "Return the resulting URL to the user."
     ),
-    model="gemini-1.5-flash",
+    model="gemini-2.0-flash",
     tools=[mcp_toolset]
 )
 
